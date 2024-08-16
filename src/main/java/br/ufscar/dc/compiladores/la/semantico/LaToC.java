@@ -55,7 +55,11 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
     @Override
     public Void visitDeclaracao_local(LaSemanticParser.Declaracao_localContext ctx) {
         if (ctx.IDENT() != null) {
+            //Lidando com constantes
+            if(ctx.valor_constante() != null){
+                finalCode.append("#define ").append(ctx.IDENT().getText()).append(" ").append(ctx.valor_constante().getText()).append("\n");
 
+            }
         } else {
             if (ctx.variavel().tipo().registro() == null) {
                 String tipo = ctx.variavel().tipo().getText();
@@ -98,8 +102,10 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
             visitCmdLeia(ctx.cmdLeia());
         } else if (ctx.cmdEscreva() != null) {
             visitCmdEscreva(ctx.cmdEscreva());
-        }else if(ctx.cmdSe() != null){
+        } else if (ctx.cmdSe() != null) {
             visitCmdSe(ctx.cmdSe());
+        } else if (ctx.cmdCaso() != null) {
+            visitCmdCaso(ctx.cmdCaso());
         }
         return null;
     }
@@ -177,6 +183,57 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
             for (int i = ctx.cmd().size() / 2; i < ctx.cmd().size(); i++) {
                 visitCmd(ctx.cmd(i));
             }
+        }
+
+        finalCode.append("}\n");
+
+        return null;
+    }
+
+    @Override
+    public Void visitCmdCaso(LaSemanticParser.CmdCasoContext ctx) {
+        // Iniciar o switch com a expressão aritmética
+        finalCode.append("switch (");
+        finalCode.append(ctx.exp_aritmetica().getText());
+        finalCode.append(") {\n");
+
+        // Visitar cada item de seleção
+        for (LaSemanticParser.Item_selecaoContext itemCtx : ctx.selecao().item_selecao()) {
+            for (LaSemanticParser.Numero_intervaloContext intervaloCtx : itemCtx.constantes().numero_intervalo()) {
+                // Se o intervalo for um único número
+                if (intervaloCtx.NUM_INT().size() == 1) {
+                    finalCode.append("case ");
+                    finalCode.append(intervaloCtx.NUM_INT(0).getText());
+                    finalCode.append(":\n");
+                }
+                // Se o intervalo for um intervalo de números
+                else {
+                    int inicio = Integer.parseInt(intervaloCtx.NUM_INT(0).getText());
+                    int fim = Integer.parseInt(intervaloCtx.NUM_INT(1).getText());
+                    for (int i = inicio; i <= fim; i++) {
+                        finalCode.append("case ");
+                        finalCode.append(i);
+                        finalCode.append(":\n");
+                    }
+                }
+            }
+
+            // Adicionar os comandos dentro do case
+            for (LaSemanticParser.CmdContext cmdCtx : itemCtx.cmd()) {
+                visitCmd(cmdCtx);
+            }
+
+            // Adicionar o break
+            finalCode.append("break;\n");
+        }
+
+        // Verificar se há o bloco "senao" (default)
+        if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("senao")) {
+            finalCode.append("default:\n");
+            for (int i = ctx.cmd().size() / 2; i < ctx.cmd().size(); i++) {
+                visitCmd(ctx.cmd(i));
+            }
+            finalCode.append("break;\n");
         }
 
         finalCode.append("}\n");
