@@ -98,6 +98,8 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
             visitCmdLeia(ctx.cmdLeia());
         } else if (ctx.cmdEscreva() != null) {
             visitCmdEscreva(ctx.cmdEscreva());
+        }else if(ctx.cmdSe() != null){
+            visitCmdSe(ctx.cmdSe());
         }
         return null;
     }
@@ -151,6 +153,33 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
         }
 
         finalCode.append(");\n");
+
+        return null;
+    }
+
+    @Override
+    public Void visitCmdSe(LaSemanticParser.CmdSeContext ctx) {
+        // Visitar a expressão de condição
+        finalCode.append("if (");
+        finalCode.append(ctx.expressao().getText());
+        finalCode.append(") {\n");
+
+        // Visitar comandos dentro do bloco "então"
+        for (LaSemanticParser.CmdContext cmdCtx : ctx.cmd()) {
+            visitCmd(cmdCtx);
+        }
+
+        // Verificar se há o bloco "senao"
+        if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("senao")) {
+            finalCode.append("} else {\n");
+
+            // Visitar comandos dentro do bloco "senao"
+            for (int i = ctx.cmd().size() / 2; i < ctx.cmd().size(); i++) {
+                visitCmd(ctx.cmd(i));
+            }
+        }
+
+        finalCode.append("}\n");
 
         return null;
     }
