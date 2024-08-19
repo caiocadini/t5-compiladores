@@ -341,7 +341,7 @@ public class LaSemantico extends LaSemanticBaseVisitor<Void> {
         return super.visitCmdLeia(ctx);
     }
 
-    private TipoLa obterTipo(String strTipo) {
+    public static TipoLa obterTipo(String strTipo) {
         // Verifica se o tipo é um tipo definido pelo usuário
         if (tiposLista.containsKey(strTipo)) {
             return TipoLa.REG;

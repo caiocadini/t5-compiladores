@@ -3,7 +3,10 @@ package br.ufscar.dc.compiladores.la.semantico;
 import java.util.List;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.ibm.icu.text.SymbolTable;
+
 import br.ufscar.dc.compiladores.la.semantico.LaSemanticParser.IdentificadorContext;
+import br.ufscar.dc.compiladores.la.semantico.TabelaDeSimbolos.TipoLa;
 
 public class LaToC extends LaSemanticBaseVisitor<Void> {
     Escopos escoposAninhados = new Escopos();
@@ -54,15 +57,17 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
 
     @Override
     public Void visitDeclaracao_local(LaSemanticParser.Declaracao_localContext ctx) {
+        String tipo = null;
         if (ctx.IDENT() != null) {
-            //Lidando com constantes
-            if(ctx.valor_constante() != null){
-                finalCode.append("#define ").append(ctx.IDENT().getText()).append(" ").append(ctx.valor_constante().getText()).append("\n");
+            // Lidando com constantes
+            if (ctx.valor_constante() != null) {
+                finalCode.append("#define ").append(ctx.IDENT().getText()).append(" ")
+                        .append(ctx.valor_constante().getText()).append("\n");
 
             }
         } else {
             if (ctx.variavel().tipo().registro() == null) {
-                String tipo = ctx.variavel().tipo().getText();
+                tipo = ctx.variavel().tipo().getText();
                 // Checar pois o nome numeral de tipo é diferente do nome comum
                 switch (tipo) {
                     case "inteiro":
@@ -90,6 +95,41 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
                     }
                     finalCode.append(tipo);
                 }
+            } else {
+                finalCode.append("struct {\n");
+                for (LaSemanticParser.IdentificadorContext ic : ctx.variavel().identificador()) {
+                    tabelaDeSimbolos.adicionar(ic.getText(), TipoLa.REG);
+
+                    LaSemanticParser.RegistroContext registroCtx = ctx.variavel().tipo().registro();
+                    for (LaSemanticParser.VariavelContext vc : registroCtx.variavel()) {
+                        String tipoVariavelStr = vc.tipo().getText();
+                        TipoLa tipoVariavelLa = LaSemantico.obterTipo(tipoVariavelStr);
+
+                        if (tipoVariavelLa != TipoLa.INVALIDO) {
+                            for (LaSemanticParser.IdentificadorContext icr : vc.identificador()) {
+                                String nomeCampo = icr.getText();
+                                tabelaDeSimbolos.adicionar(ic.getText() + "." + nomeCampo, tipoVariavelLa);
+                                switch (tipoVariavelLa) {
+                                    case INT:
+                                        tipo = "int " + icr.getText() + ";\n";
+                                        break;
+                                    case REAL:
+                                        tipo = "float " + icr.getText() + ";\n";
+                                        break;
+                                    case LIT:
+                                        tipo = "char " + icr.getText() + "[80];\n";
+                                        break;
+                                }
+
+                                finalCode.append(tipo);
+                            }
+                        }
+                    }
+                }
+                finalCode.append("} ");
+                for (LaSemanticParser.IdentificadorContext ic : ctx.variavel().identificador()) {
+                    finalCode.append(ic.getText() + ";\n");
+                }
             }
 
         }
@@ -106,6 +146,8 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
             visitCmdSe(ctx.cmdSe());
         } else if (ctx.cmdCaso() != null) {
             visitCmdCaso(ctx.cmdCaso());
+        } else if (ctx.cmdAtribuicao() != null) {
+            visitCmdAtribuicao(ctx.cmdAtribuicao());
         }
         return null;
     }
@@ -240,5 +282,24 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
 
         return null;
     }
+
+    @Override
+    public Void visitCmdAtribuicao(LaSemanticParser.CmdAtribuicaoContext ctx) {
+        String[] var_valor = ctx.getText().split("<-");
+
+        TabelaDeSimbolos.TipoLa tipoVar = tabelaDeSimbolos.verificar(var_valor[0]);
+
+        if (tipoVar == TabelaDeSimbolos.TipoLa.LIT) {
+            finalCode.append("strcpy(");
+
+            finalCode.append(ctx.identificador().getText()+"," + ctx.expressao().getText() + ");\n");
+        } else {
+            finalCode.append(ctx.identificador().getText());
+            finalCode.append(" = ");
+            finalCode.append(ctx.expressao().getText());
+            finalCode.append(";\n");
+        }
+        return null;
+    };
 
 }
