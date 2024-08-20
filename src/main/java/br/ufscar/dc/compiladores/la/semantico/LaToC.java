@@ -148,6 +148,8 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
             visitCmdCaso(ctx.cmdCaso());
         } else if (ctx.cmdAtribuicao() != null) {
             visitCmdAtribuicao(ctx.cmdAtribuicao());
+        } else if (ctx.cmdPara() != null){
+            visitCmdPara(ctx.cmdPara());
         }
         return null;
     }
@@ -301,5 +303,18 @@ public class LaToC extends LaSemanticBaseVisitor<Void> {
         }
         return null;
     };
+
+    @Override
+    public Void visitCmdPara(LaSemanticParser.CmdParaContext ctx){
+        finalCode.append("for(" + ctx.IDENT().getText()+"="+ctx.exp_aritmetica(0).getText()+"; ");
+        finalCode.append(ctx.IDENT().getText()+"<="+ctx.exp_aritmetica(1).getText()+"; ");
+        finalCode.append(ctx.IDENT().getText()+"++){\n");
+        for(LaSemanticParser.CmdContext cmdCtx : ctx.cmd()){
+            visitCmd(cmdCtx);
+        }
+        finalCode.append("}\n");
+        return null;
+
+    }
 
 }
