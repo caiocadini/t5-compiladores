@@ -31,7 +31,6 @@ br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$Op1Context.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$Op2Context.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$FatorContext.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$Declaracao_localContext.class
-br/ufscar/dc/compiladores/la/semantico/SyntaxErrorListener.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$VariavelContext.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$Exp_aritmeticaContext.class
 br/ufscar/dc/compiladores/la/semantico/LaSemanticParser$Parcela_nao_unarioContext.class

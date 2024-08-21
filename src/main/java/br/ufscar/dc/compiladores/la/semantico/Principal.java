@@ -40,9 +40,6 @@ public class Principal {
                     lex.reset();
                     CommonTokenStream tokens = new CommonTokenStream(lex);
                     LaSemanticParser parser = new LaSemanticParser(tokens);
-                    SyntaxErrorListener mcel = new SyntaxErrorListener();
-                    parser.removeErrorListeners();
-                    parser.addErrorListener(mcel);
                     LaSemanticParser.ProgramaContext programa = parser.programa();
 
                     // Realizar análise semântica
